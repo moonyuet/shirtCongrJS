@@ -26,7 +26,7 @@ window.addEventListener("DOMContentLoaded", function() {
         var canvasSec = new fabric.Canvas('canvas2');
         fabric.Image.fromURL("textures/shirt_diffuse.png", function(img2) {
             var img3 = img2.set({ selectable: false });
-            canvasSec.add(img2).renderAll();
+            canvasSec.add(img3).renderAll();
 
 
         });
@@ -53,47 +53,107 @@ window.addEventListener("DOMContentLoaded", function() {
                 canvasSec.remove(...activeObj);
             }
         });
+        // Text
+        $('#fill').change(function() {
+            var obj = canvasSec.getActiveObject();
+
+            if (obj) {
+                // old api
+                // obj.setFill($(this).val());
+                obj.set("fill", this.value);
+            }
+            canvasSec.renderAll();
+        });
+
+        $('#font').change(function() {
+            var obj = canvasSec.getActiveObject();
+
+            if (obj) {
+                // old api
+                // obj.setFontFamily($(this).val());
+                obj.set("fontFamily", this.value);
+            }
+
+            canvasSec.renderAll();
+        });
+
+        $(document).ready(function() {
+            addText = function() {
+                var oText = new fabric.IText('Tap and Type', {
+                    left: 100,
+                    top: 100,
+                });
+
+                canvasSec.add(oText);
+                oText.bringToFront();
+                canvasSec.setActiveObject(oText);
+                $('#fill, #font').trigger('change');
+            }
+        })
+        $('.delete_object').click(function() {
+            var activeObj = canvasSec.getActiveObjects();
+            if (confirm('Are you sure to delete?')) {
+                canvasSec.discardActiveObject();
+                canvasSec.remove(...activeObj);
+            }
+        });
+
+        var material = new BABYLON.PBRMaterial("pbr", scene);
+
+        //var texture = new BABYLON.Texture("textures/shirt_diffuse.png", scene, true, false);
 
 
 
-        var texture = new BABYLON.Texture("textures/shirt_diffuse.png", scene, true, false);
-
-        var texture = new BABYLON.DynamicTexture("texture", canvasSecond, scene, true, 0, 0, true, false);
         // texture.wAng = Math.PI;
         // texture.uScale = -1;
 
         var nrmtexture = new BABYLON.Texture("textures/shirt_normal.png", scene, true, false);
         var spectexture = new BABYLON.Texture("textures/shirt_spec.png", scene, true, false);
 
+
         BABYLON.SceneLoader.ImportMesh("", "gltf/", "shirt.gltf", scene, function(mesh) {
             scene.createDefaultCameraOrLight(true, true, true);
-            var meshOne = mesh[1];
-
-            var material = new BABYLON.PBRMaterial("material", scene);
-
-            material.albedoTexture = texture;
-
-            material.reflectionTexture = new BABYLON.HDRCubeTexture("textures/abandoned_factory_canteen_02_2k.hdr", scene, 218, false, false, false, false);
-            material.bumpTexture = nrmtexture;
-            material.specularTexture = spectexture;
-
-            material.metallic = 0;
-            material.roughness = 1;
+            var meshOne = mesh[0];
 
 
-            meshOne.material = material;
+            var myGoodMat = scene.getMaterialByName("material");
+
+            var texture = new BABYLON.DynamicTexture("texture", canvasSecond, scene, 2, 2, true, false);
+            myGoodMat.albedoTexture = texture;
 
 
+
+            console.log("myGoodMat.albedoTexture.name = " + myGoodMat.albedoTexture.name);
+
+
+
+            myGoodMat.reflectionTexture = new BABYLON.HDRCubeTexture("textures/abandoned_factory_canteen_02_2k.hdr", scene, 218, false, false, false, false);
+            myGoodMat.bumpTexture = nrmtexture;
+            myGoodMat.specularTexture = spectexture;
+
+            myGoodMat.metallic = 0;
+            myGoodMat.roughness = 1;
+
+
+            meshOne.material = myGoodMat;
+            scene.onBeforeRenderObservable.add(() => {
+
+                texture.update(false);
+
+            });
 
         });
+        var imageSaver = document.getElementById('lnkDownload');
+        imageSaver.addEventListener('click', saveImage, false);
 
+        function saveImage(e) {
+            this.href = canvasSec.toDataURL({
+                format: 'png',
+                quality: 0.8
+            });
+            this.download = 'canvas.png'
+        }
 
-
-        scene.onBeforeRenderObservable.add(() => {
-
-            texture.update();
-
-        });
 
 
         return scene;
